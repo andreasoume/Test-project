@@ -29,4 +29,3 @@ export const Default = (props: TitleAndTextProps): React.ReactElement => {
     </div>
   );
 };
-
