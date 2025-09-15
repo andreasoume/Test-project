@@ -1,6 +1,6 @@
-import React, { useState, ChangeEvent, FormEvent } from "react";
-import styles from "../styles/quotationForm.module.css";
-import referenceData from "../data/referenceData.json";
+import React, { useState, ChangeEvent, FormEvent } from 'react';
+import styles from '../styles/quotationForm.module.css';
+import referenceData from '../data/referenceData.json';
 
 type TransportMode = (typeof referenceData.transportModes)[number];
 type QuotationType = (typeof referenceData.quotationTypes)[number];
@@ -138,7 +138,7 @@ const QuotationForm: React.FC = () => {
               <span>
                 {
                   [
-                    'Données d&rsquo;acheminement',
+                    'Données d’acheminement',
                     'Informations sur la cargaison',
                     'Informations de contact',
                     'Informations sur la société',
@@ -166,8 +166,8 @@ const QuotationForm: React.FC = () => {
             {referenceData.transportModes.map((mode) => (
               <label key={mode}>
                 <input
-                  type='radio'
-                  name='transportMode'
+                  type="radio"
+                  name="transportMode"
                   value={mode}
                   checked={formData.transportMode === mode}
                   onChange={handleChange}
@@ -179,13 +179,13 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Incoterms *</label>
           <select
-            name='incoterm'
+            name="incoterm"
             value={formData.incoterm}
             onChange={handleChange}
             required
             className={styles.select}
           >
-            <option value=''>-- Sélectionner --</option>
+            <option value="">-- Sélectionner --</option>
             {referenceData.incoterms.map((i) => (
               <option key={i} value={i}>
                 {i}
@@ -195,13 +195,13 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Scope *</label>
           <select
-            name='scope'
+            name="scope"
             value={formData.scope}
             onChange={handleChange}
             required
             className={styles.select}
           >
-            <option value=''>-- Sélectionner --</option>
+            <option value="">-- Sélectionner --</option>
             {referenceData.scopes.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -212,12 +212,12 @@ const QuotationForm: React.FC = () => {
           <h2>ORIGINE</h2>
           <label className={styles.label}>Pays *</label>
           <select
-            name='originCountry'
+            name="originCountry"
             value={formData.originCountry}
             onChange={handleChange}
             className={styles.select}
           >
-            <option value=''>-- Sélectionner --</option>
+            <option value="">-- Sélectionner --</option>
             {referenceData.countries.map((c) => (
               <option key={c.code} value={c.code}>
                 {c.name}
@@ -227,13 +227,13 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Ville *</label>
           <select
-            name='originCity'
+            name="originCity"
             value={formData.originCity}
             onChange={handleChange}
             className={styles.select}
             disabled={!formData.originCountry}
           >
-            <option value=''>-- Sélectionner --</option>
+            <option value="">-- Sélectionner --</option>
             {filteredOriginCities.map((c) => (
               <option key={c.name} value={c.name}>
                 {c.name}
@@ -243,8 +243,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Date de départ *</label>
           <input
-            type='date'
-            name='originDate'
+            type="date"
+            name="originDate"
             value={formData.originDate}
             onChange={handleChange}
             required
@@ -254,12 +254,12 @@ const QuotationForm: React.FC = () => {
           <h2>DESTINATION</h2>
           <label className={styles.label}>Pays *</label>
           <select
-            name='destinationCountry'
+            name="destinationCountry"
             value={formData.destinationCountry}
             onChange={handleChange}
             className={styles.select}
           >
-            <option value=''>-- Sélectionner --</option>
+            <option value="">-- Sélectionner --</option>
             {referenceData.countries.map((c) => (
               <option key={c.code} value={c.code}>
                 {c.name}
@@ -269,13 +269,13 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Ville *</label>
           <select
-            name='destinationCity'
+            name="destinationCity"
             value={formData.destinationCity}
             onChange={handleChange}
             className={styles.select}
             disabled={!formData.destinationCountry}
           >
-            <option value=''>-- Sélectionner --</option>
+            <option value="">-- Sélectionner --</option>
             {filteredDestinationCities.map((c) => (
               <option key={c.name} value={c.name}>
                 {c.name}
@@ -285,8 +285,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Date d’arrivée *</label>
           <input
-            type='date'
-            name='destinationDate'
+            type="date"
+            name="destinationDate"
             value={formData.destinationDate}
             onChange={handleChange}
             required
@@ -295,7 +295,7 @@ const QuotationForm: React.FC = () => {
 
           <br />
           <br />
-          <button type='submit' className={`${styles.button} ${styles.next}`}>
+          <button type="submit" className={`${styles.button} ${styles.next}`}>
             Suivant →
           </button>
         </form>
@@ -313,13 +313,13 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Type de cargaison *</label>
           <select
-            name='QuotationType'
+            name="QuotationType"
             value={formData.QuotationType}
             onChange={handleChange}
             required
             className={styles.select}
           >
-            <option value=''>-- Sélectionner --</option>
+            <option value="">-- Sélectionner --</option>
             {referenceData.quotationTypes.map((q) => (
               <option key={q} value={q}>
                 {q}
@@ -329,8 +329,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Volume (CBM) *</label>
           <input
-            type='number'
-            name='volume'
+            type="number"
+            name="volume"
             value={formData.volume}
             onChange={handleChange}
             required
@@ -339,8 +339,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Poids (KG) *</label>
           <input
-            type='number'
-            name='weight'
+            type="number"
+            name="weight"
             value={formData.weight}
             onChange={handleChange}
             required
@@ -350,8 +350,8 @@ const QuotationForm: React.FC = () => {
           <div className={styles.radioGroup}>
             <label className={styles.label}>
               <input
-                type='checkbox'
-                name='temperatureControlled'
+                type="checkbox"
+                name="temperatureControlled"
                 checked={formData.temperatureControlled}
                 onChange={handleChange}
               />{' '}
@@ -359,8 +359,8 @@ const QuotationForm: React.FC = () => {
             </label>
             <label className={styles.label}>
               <input
-                type='checkbox'
-                name='dangerousGoods'
+                type="checkbox"
+                name="dangerousGoods"
                 checked={formData.dangerousGoods}
                 onChange={handleChange}
               />{' '}
@@ -368,8 +368,8 @@ const QuotationForm: React.FC = () => {
             </label>
             <label className={styles.label}>
               <input
-                type='checkbox'
-                name='customsFormalities'
+                type="checkbox"
+                name="customsFormalities"
                 checked={formData.customsFormalities}
                 onChange={handleChange}
               />{' '}
@@ -377,8 +377,8 @@ const QuotationForm: React.FC = () => {
             </label>
             <label className={styles.label}>
               <input
-                type='checkbox'
-                name='insurance'
+                type="checkbox"
+                name="insurance"
                 checked={formData.insurance}
                 onChange={handleChange}
               />{' '}
@@ -388,7 +388,7 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Commentaire</label>
           <textarea
-            name='comment'
+            name="comment"
             rows={3}
             value={formData.comment}
             onChange={handleChange}
@@ -397,10 +397,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Documents</label>
           <div className={styles.uploadBox}>
-            <input type='file' multiple onChange={handleFileChange} />
-            <p>
-              Faites glisser les fichiers ici ou cliquez pour les télécharger
-            </p>
+            <input type="file" multiple onChange={handleFileChange} />
+            <p>Faites glisser les fichiers ici ou cliquez pour les télécharger</p>
           </div>
 
           {/* Affichage des fichiers ajoutés */}
@@ -420,7 +418,7 @@ const QuotationForm: React.FC = () => {
                     {file.name} ({(file.size / 1024).toFixed(1)} KB)
                   </span>
                   <button
-                    type='button'
+                    type="button"
                     onClick={() => {
                       setFormData((prev) => ({
                         ...prev,
@@ -443,14 +441,10 @@ const QuotationForm: React.FC = () => {
           )}
 
           <div className={styles.buttons}>
-            <button
-              type='button'
-              onClick={goBack}
-              className={`${styles.button} ${styles.prev}`}
-            >
+            <button type="button" onClick={goBack} className={`${styles.button} ${styles.prev}`}>
               ← Précédent
             </button>
-            <button type='submit' className={`${styles.button} ${styles.next}`}>
+            <button type="submit" className={`${styles.button} ${styles.next}`}>
               Suivant →
             </button>
           </div>
@@ -469,8 +463,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Prénom *</label>
           <input
-            type='text'
-            name='firstName'
+            type="text"
+            name="firstName"
             value={formData.firstName}
             onChange={handleChange}
             required
@@ -479,8 +473,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Nom *</label>
           <input
-            type='text'
-            name='lastName'
+            type="text"
+            name="lastName"
             value={formData.lastName}
             onChange={handleChange}
             required
@@ -491,16 +485,16 @@ const QuotationForm: React.FC = () => {
           <div className={styles.flexRow}>
             <input
               style={{ width: 80 }}
-              type='text'
-              name='phoneCode'
+              type="text"
+              name="phoneCode"
               value={formData.phoneCode}
               onChange={handleChange}
               required
               className={styles.input}
             />
             <input
-              type='text'
-              name='phoneNumber'
+              type="text"
+              name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
               required
@@ -510,8 +504,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Email *</label>
           <input
-            type='email'
-            name='email'
+            type="email"
+            name="email"
             value={formData.email}
             onChange={handleChange}
             required
@@ -520,8 +514,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Poste *</label>
           <input
-            type='text'
-            name='jobTitle'
+            type="text"
+            name="jobTitle"
             value={formData.jobTitle}
             onChange={handleChange}
             required
@@ -529,14 +523,10 @@ const QuotationForm: React.FC = () => {
           />
 
           <div className={styles.buttons}>
-            <button
-              type='button'
-              onClick={goBack}
-              className={`${styles.button} ${styles.prev}`}
-            >
+            <button type="button" onClick={goBack} className={`${styles.button} ${styles.prev}`}>
               ← Précédent
             </button>
-            <button type='submit' className={`${styles.button} ${styles.next}`}>
+            <button type="submit" className={`${styles.button} ${styles.next}`}>
               Suivant →
             </button>
           </div>
@@ -555,8 +545,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Nom de la société *</label>
           <input
-            type='text'
-            name='companyName'
+            type="text"
+            name="companyName"
             value={formData.companyName}
             onChange={handleChange}
             required
@@ -565,8 +555,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Rue *</label>
           <input
-            type='text'
-            name='companyAddress'
+            type="text"
+            name="companyAddress"
             value={formData.companyAddress}
             onChange={handleChange}
             required
@@ -575,8 +565,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Code Postal *</label>
           <input
-            type='text'
-            name='postalCode'
+            type="text"
+            name="postalCode"
             value={formData.postalCode}
             onChange={handleChange}
             required
@@ -585,8 +575,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Ville *</label>
           <input
-            type='text'
-            name='companyCity'
+            type="text"
+            name="companyCity"
             value={formData.companyCity}
             onChange={handleChange}
             required
@@ -595,8 +585,8 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Pays *</label>
           <input
-            type='text'
-            name='companyCountry'
+            type="text"
+            name="companyCountry"
             value={formData.companyCountry}
             onChange={handleChange}
             required
@@ -605,22 +595,18 @@ const QuotationForm: React.FC = () => {
 
           <label className={styles.label}>Site web</label>
           <input
-            type='text'
-            name='website'
+            type="text"
+            name="website"
             value={formData.website}
             onChange={handleChange}
             className={styles.input}
           />
 
           <div className={styles.buttons}>
-            <button
-              type='button'
-              onClick={goBack}
-              className={`${styles.button} ${styles.prev}`}
-            >
+            <button type="button" onClick={goBack} className={`${styles.button} ${styles.prev}`}>
               ← Précédent
             </button>
-            <button type='submit' className={`${styles.button} ${styles.next}`}>
+            <button type="submit" className={`${styles.button} ${styles.next}`}>
               Suivant →
             </button>
           </div>
@@ -641,12 +627,12 @@ const QuotationForm: React.FC = () => {
             <strong>Scope :</strong> {formData.scope}
           </p>
           <p>
-            <strong>Origine :</strong> {formData.originCity},{' '}
-            {formData.originCountry} – {formData.originDate}
+            <strong>Origine :</strong> {formData.originCity}, {formData.originCountry} –{' '}
+            {formData.originDate}
           </p>
           <p>
-            <strong>Destination :</strong> {formData.destinationCity},{' '}
-            {formData.destinationCountry} – {formData.destinationDate}
+            <strong>Destination :</strong> {formData.destinationCity}, {formData.destinationCountry}{' '}
+            – {formData.destinationDate}
           </p>
 
           <h3>INFORMATIONS SUR LA CARGAISON</h3>
@@ -664,12 +650,10 @@ const QuotationForm: React.FC = () => {
             {formData.temperatureControlled ? 'Oui' : 'Non'}
           </p>
           <p>
-            <strong>Marchandises dangereuses :</strong>{' '}
-            {formData.dangerousGoods ? 'Oui' : 'Non'}
+            <strong>Marchandises dangereuses :</strong> {formData.dangerousGoods ? 'Oui' : 'Non'}
           </p>
           <p>
-            <strong>Douanes :</strong>{' '}
-            {formData.customsFormalities ? 'Oui' : 'Non'}
+            <strong>Douanes :</strong> {formData.customsFormalities ? 'Oui' : 'Non'}
           </p>
           <p>
             <strong>Assurance :</strong> {formData.insurance ? 'Oui' : 'Non'}
@@ -688,8 +672,7 @@ const QuotationForm: React.FC = () => {
             <strong>Email :</strong> {formData.email}
           </p>
           <p>
-            <strong>Téléphone :</strong> {formData.phoneCode}{' '}
-            {formData.phoneNumber}
+            <strong>Téléphone :</strong> {formData.phoneCode} {formData.phoneNumber}
           </p>
           <p>
             <strong>Poste :</strong> {formData.jobTitle}
@@ -755,13 +738,13 @@ const QuotationForm: React.FC = () => {
                     {/* Icône Supprimer */}
                     <svg
                       onClick={handleDeleteFile}
-                      xmlns='http://www.w3.org/2000/svg'
-                      viewBox='0 0 24 24'
-                      fill='none'
-                      stroke='currentColor'
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
                       strokeWidth={2}
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       style={{
                         cursor: 'pointer',
                         width: '20px',
@@ -769,48 +752,46 @@ const QuotationForm: React.FC = () => {
                         marginRight: '15px',
                         color: 'red',
                       }}
-                      role='button'
+                      role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ')
-                          handleDeleteFile();
+                        if (e.key === 'Enter' || e.key === ' ') handleDeleteFile();
                       }}
                     >
                       <title>Supprimer</title>
-                      <polyline points='3 6 5 6 21 6' />
-                      <path d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6' />
-                      <path d='M10 11v6' />
-                      <path d='M14 11v6' />
-                      <path d='M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2' />
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                     </svg>
 
                     {/* Icône Télécharger */}
                     <svg
                       onClick={handleDownloadFile}
-                      xmlns='http://www.w3.org/2000/svg'
-                      viewBox='0 0 24 24'
-                      fill='none'
-                      stroke='currentColor'
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
                       strokeWidth={2}
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       style={{
                         cursor: 'pointer',
                         width: '20px',
                         height: '20px',
                         color: 'green',
                       }}
-                      role='button'
+                      role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ')
-                          handleDownloadFile();
+                        if (e.key === 'Enter' || e.key === ' ') handleDownloadFile();
                       }}
                     >
                       <title>Télécharger</title>
-                      <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
-                      <polyline points='7 10 12 15 17 10' />
-                      <line x1='12' y1='15' x2='12' y2='3' />
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
                   </li>
                 );
@@ -820,26 +801,18 @@ const QuotationForm: React.FC = () => {
 
           <div className={styles.radioGroup}>
             <label>
-              <input type='checkbox' required /> J’atteste que les informations
-              sont exactes.
+              <input type="checkbox" required /> J’atteste que les informations sont exactes.
             </label>
             <label>
-              <input type='checkbox' /> Je souhaite recevoir des communications.
+              <input type="checkbox" /> Je souhaite recevoir des communications.
             </label>
           </div>
 
           <div className={styles.buttons}>
-            <button
-              type='button'
-              onClick={goBack}
-              className={`${styles.button} ${styles.prev}`}
-            >
+            <button type="button" onClick={goBack} className={`${styles.button} ${styles.prev}`}>
               ← Précédent
             </button>
-            <button
-              type='submit'
-              className={`${styles.button} ${styles.submit}`}
-            >
+            <button type="submit" className={`${styles.button} ${styles.submit}`}>
               Soumettre →
             </button>
           </div>
@@ -852,14 +825,11 @@ const QuotationForm: React.FC = () => {
             <strong>Merci pour votre demande !</strong>
           </p>
           <p style={{ color: 'red' }}>
-            Nous sommes ravis que vous ayez pris le temps de remplir notre
-            formulaire de cotation. Notre équipe examine votre demande avec
-            attention et reviendra vers vous très rapidement avec une
-            proposition adaptée à vos besoins.
+            Nous sommes ravis que vous ayez pris le temps de remplir notre formulaire de cotation.
+            Notre équipe examine votre demande avec attention et reviendra vers vous très rapidement
+            avec une proposition adaptée à vos besoins.
           </p>
-          <p style={{ color: 'red' }}>
-            En attendant, n’hésitez pas à parcourir notre site.
-          </p>
+          <p style={{ color: 'red' }}>En attendant, n’hésitez pas à parcourir notre site.</p>
 
           <div className={styles.buttonsContainer}>
             <button
@@ -868,10 +838,7 @@ const QuotationForm: React.FC = () => {
             >
               ← Retour à l&rsquo;accueil
             </button>
-            <button
-              className={`${styles.button} ${styles.next}`}
-              onClick={() => setStep(1)}
-            >
+            <button className={`${styles.button} ${styles.next}`} onClick={() => setStep(1)}>
               Faire une autre demande
             </button>
           </div>
@@ -882,7 +849,3 @@ const QuotationForm: React.FC = () => {
 };
 
 export default QuotationForm;
-
-
-
-
