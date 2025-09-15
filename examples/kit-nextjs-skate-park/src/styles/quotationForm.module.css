@@ -1,0 +1,215 @@
+.container {
+    max-width: 700px;
+    margin: 30px auto;
+    background: white;
+    padding: 40px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    font-family: "Segoe UI", sans-serif;
+    color: #2b3e64;
+  }
+  
+  .title {
+    text-align: center;
+    color: #2b3e64;
+  }
+  
+  .steps {
+    display: flex;
+    justify-content: space-between;
+    margin: 30px 0;
+    counter-reset: step;
+  }
+  
+  .step,
+  .stepChecked {
+    text-align: center;
+    width: 100%;
+    color: #999;
+  }
+  
+  .stepChecked {
+    font-weight: bold;
+    color: #2b3e64;
+  }
+  
+  .stepChecked::before,
+  .step::before {
+    content: counter(step);
+    counter-increment: step;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    border: 2px solid #ccc;
+    display: block;
+    text-align: center;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background-color: white;
+  }
+  
+  .stepChecked::before {
+    border-color: #eed284;
+    background-color: #eed284;
+    color: #2b3e64;
+  }
+  
+  .active {
+    font-weight: bold;
+    color: #2b3e64;
+  }
+  
+  .active::before {
+    border-color: #2b3e64;
+    background-color: #d8d8df;
+  }
+  
+  .label {
+    display: block;
+    margin-top: 20px;
+    font-weight: 500;
+  }
+  
+  /* ✅ Champ texte / nombre / date */
+  .input {
+    width: 100%;
+    padding: 10px 0;
+    margin-top: 5px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #2b3e64;
+    border-radius: 0;
+    outline: none;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+  }
+  
+  .input:focus {
+    border-bottom-color: #2b3e64;
+  }
+  
+  /* ✅ Select */
+  /*.select {
+    composes: input;
+  }
+  
+  /* ✅ Textarea */
+  /*.textarea {
+    composes: input;
+    resize: vertical;
+  }*/
+  
+  .flexRow {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .flexRow > div {
+    flex: 1;
+  }
+  
+  .uploadBox {
+    border: 2px dashed #bbb;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    background-color: #f9f9f9;
+    color: #555;
+  }
+  
+  .uploadBox:hover {
+    border-color: #888;
+    background-color: #f1f1f1;
+  }
+  
+  .uploadBox p {
+    margin: 0;
+    font-size: 14px;
+  }
+  
+  .radioGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 10px;
+    accent-color: #2b3e64;
+  }
+  
+  .radioGroup label {
+    font-weight: normal;
+  }
+  
+  .buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    gap: 10px;
+  }
+  
+  .button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 0px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .prev {
+    background-color: #f0f0f0;
+    color: #2b3e64;
+    border: 1px solid #ccc;
+  }
+  
+  .prev:hover {
+    background-color: #e4e4e4;
+    border-color: #bbb;
+  }
+  
+  .next {
+    background-color: #2b3e64;
+    color: white;
+  }
+  
+  .next:hover {
+    background-color: #1d2c4f;
+  }
+  
+  .submit {
+    background-color: #eed284;
+    color: #2b3e64;
+  }
+  
+  .submit:hover {
+    background-color: #2b3e64;
+    color: white;
+  }
+  
+  .buttonsContainer {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  .buttonsContainer button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .thankYouContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  

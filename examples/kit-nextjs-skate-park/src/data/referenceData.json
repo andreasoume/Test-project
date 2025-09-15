@@ -1,0 +1,23 @@
+{
+    "transportModes": [
+      "Air",
+      "Sea",
+      "Road",
+      "Express",
+      "Multimodal",
+      "Warehousing"
+    ],
+    "incoterms": ["EXW", "FOB", "CIF", "DAP"],
+    "scopes": ["DoorToDoor", "PortToPort"],
+    "quotationTypes": ["Conteneur", "Palette", "Vrac"],
+    "countries": [
+      { "code": "KE", "name": "Kenya" },
+      { "code": "CI", "name": "Côte d'Ivoire" }
+    ],
+    "cities": [
+      { "countryCode": "KE", "name": "Nairobi" },
+      { "countryCode": "KE", "name": "Mombasa" },
+      { "countryCode": "CI", "name": "Abidjan" },
+      { "countryCode": "CI", "name": "Yamoussoukro" }
+    ]
+  }

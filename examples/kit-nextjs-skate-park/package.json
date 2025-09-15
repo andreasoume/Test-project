@@ -28,6 +28,7 @@
     "@sitecore-feaas/clientside": "^0.6.0",
     "@sitecore/components": "~2.1.0",
     "@tailwindcss/postcss": "^4.1.11",
+    "axios": "^1.12.1",
     "font-awesome": "^4.7.0",
     "next": "^15.3.2",
     "next-localization": "^0.12.0",
@@ -67,5 +68,10 @@
     "sitecore-tools:build": "sitecore-tools project build",
     "dev": "cross-env NODE_ENV=development npm-run-all --serial sitecore-tools:build --parallel next:dev sitecore-tools:generate-map:watch",
     "start": "cross-env-shell NODE_ENV=production npm-run-all --serial build next:start"
+  },
+  "eslintConfig": {
+    "extends": [
+      "plugin:storybook/recommended"
+    ]
   }
 }

@@ -5,6 +5,7 @@ import { Form } from '@sitecore-content-sdk/nextjs';
 
 // Components imported from the app itself
 import * as SkateSpotCard from 'src/components/SkateSpotCard';
+import * as quotationForm from 'src/components/quotationForm';
 import * as Title from 'src/components/title/Title';
 import * as RowSplitter from 'src/components/row-splitter/RowSplitter';
 import * as RichText from 'src/components/rich-text/RichText';
@@ -26,6 +27,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['FEaaSWrapper', FEaaSWrapper],
   ['Form', Form],
   ['SkateSpotCard', SkateSpotCard],
+  ['quotationForm', quotationForm],
   ['Title', Title],
   ['RowSplitter', RowSplitter],
   ['RichText', RichText],
