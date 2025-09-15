@@ -159,7 +159,7 @@ const QuotationForm: React.FC = () => {
             setStep(2);
           }}
         >
-          <h2>CHAMP D'APPLICATION </h2>
+          <h2>CHAMP D&rsquo;APPLICATION </h2>
 
           <label className={styles.label}>Mode de transport *</label>
           <div className={styles.radioGroup}>
