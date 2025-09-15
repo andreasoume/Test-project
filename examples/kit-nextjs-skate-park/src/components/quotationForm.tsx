@@ -118,24 +118,26 @@ const QuotationForm: React.FC = () => {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-  
-    const resp = await fetch("https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/03c680748a1c47c4b5602e967697daca/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=615BvSpG0DnNXMWXZghkeUy9CHwfbycGu9_MkOtWi_A", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-flow-secret": process.env.NEXT_PUBLIC_FLOW_SECRET || ""  // clé secrète côté front
-      },
-      body: JSON.stringify(formData),
-    });
-  
+
+    const resp = await fetch(
+      'https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/03c680748a1c47c4b5602e967697daca/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=615BvSpG0DnNXMWXZghkeUy9CHwfbycGu9_MkOtWi_A',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-flow-secret': process.env.NEXT_PUBLIC_FLOW_SECRET || '', // clé secrète côté front
+        },
+        body: JSON.stringify(formData),
+      }
+    );
+
     if (resp.ok) {
       setStep(6);
     } else {
       const error = await resp.text();
-      alert("Erreur : " + error);
+      alert('Erreur : ' + error);
     }
   }
-  
 
   const filteredOriginCities = referenceData.cities.filter(
     (c) => c.countryCode === formData.originCountry
