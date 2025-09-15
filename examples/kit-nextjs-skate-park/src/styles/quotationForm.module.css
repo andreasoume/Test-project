@@ -88,12 +88,12 @@
   }
   
   /* ✅ Select */
-  /*.select {
+  .select {
     composes: input;
   }
   
   /* ✅ Textarea */
-  /*.textarea {
+  .textarea {
     composes: input;
     resize: vertical;
   }*/

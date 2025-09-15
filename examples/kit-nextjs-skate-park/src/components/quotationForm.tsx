@@ -159,9 +159,9 @@ const QuotationForm: React.FC = () => {
             setStep(2);
           }}
         >
-          <h2>MODE & SCOPE</h2>
+          <h2>CHAMP D'APPLICATION </h2>
 
-          <label className={styles.label}>Transport mode *</label>
+          <label className={styles.label}>Mode de transport *</label>
           <div className={styles.radioGroup}>
             {referenceData.transportModes.map((mode) => (
               <label key={mode}>
@@ -193,7 +193,7 @@ const QuotationForm: React.FC = () => {
             ))}
           </select>
 
-          <label className={styles.label}>Scope *</label>
+          <label className={styles.label}>Périmètre *</label>
           <select
             name="scope"
             value={formData.scope}
@@ -241,7 +241,7 @@ const QuotationForm: React.FC = () => {
             ))}
           </select>
 
-          <label className={styles.label}>Date de départ *</label>
+          <label className={styles.label}>Date de prise en charge *</label>
           <input
             type="date"
             name="originDate"
@@ -283,7 +283,7 @@ const QuotationForm: React.FC = () => {
             ))}
           </select>
 
-          <label className={styles.label}>Date d’arrivée *</label>
+          <label className={styles.label}>Date de livraison *</label>
           <input
             type="date"
             name="destinationDate"
@@ -327,7 +327,7 @@ const QuotationForm: React.FC = () => {
             ))}
           </select>
 
-          <label className={styles.label}>Volume (CBM) *</label>
+          <label className={styles.label}>Volume total (CBM) *</label>
           <input
             type="number"
             name="volume"
@@ -337,7 +337,7 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Poids (KG) *</label>
+          <label className={styles.label}>Poids total (KG) *</label>
           <input
             type="number"
             name="weight"
@@ -364,7 +364,7 @@ const QuotationForm: React.FC = () => {
                 checked={formData.dangerousGoods}
                 onChange={handleChange}
               />{' '}
-              Marchandises dangereuses
+              Marchandise dangereuse
             </label>
             <label className={styles.label}>
               <input
@@ -386,7 +386,11 @@ const QuotationForm: React.FC = () => {
             </label>
           </div>
 
-          <label className={styles.label}>Commentaire</label>
+          <p>
+            <strong>Souhaitez-vous ajouter un commentaire à votre demande ?</strong>
+          </p>
+
+          <label className={styles.label}>Ecrivez ci-dessous</label>
           <textarea
             name="comment"
             rows={3}
@@ -394,6 +398,10 @@ const QuotationForm: React.FC = () => {
             onChange={handleChange}
             className={styles.textarea}
           />
+
+          <p>
+            <strong>Souhaitez-vous joindre des fichiers à votre demande ?</strong>
+          </p>
 
           <label className={styles.label}>Documents</label>
           <div className={styles.uploadBox}>
@@ -481,7 +489,7 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Téléphone *</label>
+          <label className={styles.label}>Numéro de téléphone *</label>
           <div className={styles.flexRow}>
             <input
               style={{ width: 80 }}
@@ -512,7 +520,7 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Poste *</label>
+          <label className={styles.label}>Intitulé du poste *</label>
           <input
             type="text"
             name="jobTitle"
@@ -553,7 +561,7 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Rue *</label>
+          <label className={styles.label}>Adresse *</label>
           <input
             type="text"
             name="companyAddress"
