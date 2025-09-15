@@ -96,7 +96,7 @@
   .textarea {
     composes: input;
     resize: vertical;
-  }*/
+  }
   
   .flexRow {
     display: flex;
