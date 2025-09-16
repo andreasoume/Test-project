@@ -40,6 +40,10 @@ type FormData = {
   companyCity: string;
   companyCountry: string;
   website: string;
+
+  declarationCertified: boolean;
+  dataProcessingConsent: boolean;
+  marketingConsent: boolean;
 };
 
 const QuotationForm: React.FC = () => {
@@ -67,7 +71,7 @@ const QuotationForm: React.FC = () => {
 
     firstName: '',
     lastName: '',
-    phoneCode: '+254',
+    phoneCode: '+33',
     phoneNumber: '',
     email: '',
     jobTitle: '',
@@ -78,6 +82,9 @@ const QuotationForm: React.FC = () => {
     companyCity: '',
     companyCountry: '',
     website: '',
+    declarationCertified: false,
+    dataProcessingConsent: false,
+    marketingConsent: false,
   });
 
   const handleChange = (
@@ -109,15 +116,40 @@ const QuotationForm: React.FC = () => {
 
   const goBack = () => setStep((prev) => Math.max(prev - 1, 1));
 
-  /*const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    console.log('Données soumises :', formData);
-    alert('Formulaire complet soumis !');
-    setStep(6);
-  };*/
+  // 🔹 1. Fonction utilitaire pour encoder en base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file); // "data:application/pdf;base64,JVBERi0x..."
+      reader.onload = () => {
+        // enlever le "data:xxx;base64," et garder uniquement le contenu
+        const result = reader.result as string;
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
+  // 🔹 2. handleSubmit modifié
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // Conversion fichiers -> base64
+    const encodedFiles = await Promise.all(
+      formData.files.map(async (file) => ({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        content: await fileToBase64(file), // encodage base64
+      }))
+    );
+
+    // Construction du payload à envoyer
+    const payload = {
+      ...formData,
+      files: encodedFiles, // fichiers encodés en base64
+    };
 
     const resp = await fetch(
       'https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/03c680748a1c47c4b5602e967697daca/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=615BvSpG0DnNXMWXZghkeUy9CHwfbycGu9_MkOtWi_A',
@@ -125,9 +157,9 @@ const QuotationForm: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-flow-secret': process.env.NEXT_PUBLIC_FLOW_SECRET || '', // clé secrète côté front
+          'x-flow-secret': process.env.NEXT_PUBLIC_FLOW_SECRET || '',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       }
     );
 
@@ -139,12 +171,43 @@ const QuotationForm: React.FC = () => {
     }
   }
 
+  /*const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    console.log('Données soumises :', formData);
+    alert('Formulaire complet soumis !');
+    setStep(6);
+  };*/
+
+  /*async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    const resp = await fetch(
+      "https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/03c680748a1c47c4b5602e967697daca/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=615BvSpG0DnNXMWXZghkeUy9CHwfbycGu9_MkOtWi_A",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-flow-secret": process.env.NEXT_PUBLIC_FLOW_SECRET || "", // clé secrète côté front
+        },
+        body: JSON.stringify(formData),
+      }
+    );
+
+    if (resp.ok) {
+      setStep(6);
+    } else {
+      const error = await resp.text();
+      alert("Erreur : " + error);
+    }
+  }*/
+
+  /*
   const filteredOriginCities = referenceData.cities.filter(
     (c) => c.countryCode === formData.originCountry
   );
   const filteredDestinationCities = referenceData.cities.filter(
     (c) => c.countryCode === formData.destinationCountry
-  );
+  ); */
 
   return (
     <div className={styles.container}>
@@ -250,20 +313,14 @@ const QuotationForm: React.FC = () => {
           </select>
 
           <label className={styles.label}>Ville *</label>
-          <select
+          <input
+            type="text"
             name="originCity"
             value={formData.originCity}
             onChange={handleChange}
-            className={styles.select}
-            disabled={!formData.originCountry}
-          >
-            <option value="">-- Sélectionner --</option>
-            {filteredOriginCities.map((c) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            required
+            className={styles.input}
+          />
 
           <label className={styles.label}>Date de prise en charge *</label>
           <input
@@ -292,20 +349,14 @@ const QuotationForm: React.FC = () => {
           </select>
 
           <label className={styles.label}>Ville *</label>
-          <select
+          <input
+            type="text"
             name="destinationCity"
             value={formData.destinationCity}
             onChange={handleChange}
-            className={styles.select}
-            disabled={!formData.destinationCountry}
-          >
-            <option value="">-- Sélectionner --</option>
-            {filteredDestinationCities.map((c) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            required
+            className={styles.input}
+          />
 
           <label className={styles.label}>Date de livraison *</label>
           <input
@@ -833,10 +884,37 @@ const QuotationForm: React.FC = () => {
 
           <div className={styles.radioGroup}>
             <label>
-              <input type="checkbox" required /> J’atteste que les informations sont exactes.
+              <input
+                type="checkbox"
+                name="declarationCertified"
+                checked={formData.declarationCertified}
+                onChange={handleChange}
+                required
+              />{' '}
+              Je certifie sur l’honneur que les informations et pièces jointes fournies dans cette
+              déclaration sont exactes et complètes.
             </label>
             <label>
-              <input type="checkbox" /> Je souhaite recevoir des communications.
+              <input
+                type="checkbox"
+                name="dataProcessingConsent"
+                checked={formData.dataProcessingConsent}
+                onChange={handleChange}
+              />{' '}
+              Africa Global Logistics traite vos données uniquement afin de répondre à votre
+              demande. Pour en savoir plus sur la manière dont nous traitons vos données
+              personnelles et sur vos droits, cliquez ici.
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                name="marketingConsent"
+                checked={formData.marketingConsent}
+                onChange={handleChange}
+              />{' '}
+              Je consens par la présente à ce qu’Africa Global Logistics traite mes données
+              personnelles afin de m’envoyer des offres commerciales et des informations sur nos
+              services par email.
             </label>
           </div>
 
@@ -870,7 +948,52 @@ const QuotationForm: React.FC = () => {
             >
               ← Retour à l&rsquo;accueil
             </button>
-            <button className={`${styles.button} ${styles.next}`} onClick={() => setStep(1)}>
+            <button
+              className={`${styles.button} ${styles.next}`}
+              onClick={() => {
+                // 🔄 Réinitialisation complète du formulaire
+                setFormData({
+                  transportMode: referenceData.transportModes[0],
+                  incoterm: '',
+                  scope: '',
+                  originCountry: '',
+                  originCity: '',
+                  originDate: '',
+                  destinationCountry: '',
+                  destinationCity: '',
+                  destinationDate: '',
+
+                  QuotationType: referenceData.quotationTypes[0],
+                  volume: '',
+                  weight: '',
+                  temperatureControlled: false,
+                  dangerousGoods: false,
+                  customsFormalities: false,
+                  insurance: false,
+                  comment: '',
+                  files: [],
+
+                  firstName: '',
+                  lastName: '',
+                  phoneCode: '+33',
+                  phoneNumber: '',
+                  email: '',
+                  jobTitle: '',
+
+                  companyName: '',
+                  companyAddress: '',
+                  postalCode: '',
+                  companyCity: '',
+                  companyCountry: '',
+                  website: '',
+
+                  declarationCertified: false,
+                  dataProcessingConsent: false,
+                  marketingConsent: false,
+                });
+                setStep(1);
+              }}
+            >
               Faire une autre demande
             </button>
           </div>
