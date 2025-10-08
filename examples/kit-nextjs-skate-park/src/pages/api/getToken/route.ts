@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function POST(_req: NextRequest) {
+export async function POST() {
   try {
     const tenant_id = process.env.AZURE_TENANT_ID!;
     const client_id = process.env.AZURE_CLIENT_ID!;
