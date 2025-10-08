@@ -3,10 +3,13 @@ import React, { useState, ChangeEvent } from 'react';
 import styles from '../styles/quotationForm.module.css';
 import referenceData from '../data/referenceData.json';
 
-type TransportMode = (typeof referenceData.transportModes)[number];
-type QuotationType = (typeof referenceData.quotationTypes)[number];
+type Lang = 'en' | 'fr';
+
+type TransportMode = string;
+type QuotationType = string;
 
 type FormData = {
+  lang: Lang; // ✅ AJOUT ICI
   transportMode: TransportMode;
   incoterm: string;
   scope: string;
@@ -17,7 +20,7 @@ type FormData = {
   destinationCity: string;
   destinationDate: string;
 
-  QuotationType: QuotationType;
+  quotationType: QuotationType;
   volume: string;
   weight: string;
   temperatureControlled: boolean;
@@ -44,12 +47,29 @@ type FormData = {
   declarationCertified: boolean;
   dataProcessingConsent: boolean;
   marketingConsent: boolean;
+
+  originRegion: string; // ✅ ajouté
+  destinationRegion: string; // ✅ ajouté
+
+  originCountryCode: string; // ✅ ajouté
+  destinationCountryCode: string; // ✅ ajouté
+
+  air: boolean;
+  sea: boolean;
+  road: boolean;
+  express: boolean;
+  multimodal: boolean;
+  warehousing: boolean;
 };
 
 const QuotationForm: React.FC = () => {
   const [step, setStep] = useState(1);
+  const [lang, setLang] = useState<Lang>('en');
+  const labels = referenceData.labels[lang];
+
   const [formData, setFormData] = useState<FormData>({
-    transportMode: referenceData.transportModes[0],
+    lang: 'en', // ✅ valeur par défaut
+    transportMode: '',
     incoterm: '',
     scope: '',
     originCountry: '',
@@ -59,7 +79,7 @@ const QuotationForm: React.FC = () => {
     destinationCity: '',
     destinationDate: '',
 
-    QuotationType: referenceData.quotationTypes[0],
+    quotationType: '',
     volume: '',
     weight: '',
     temperatureControlled: false,
@@ -82,28 +102,62 @@ const QuotationForm: React.FC = () => {
     companyCity: '',
     companyCountry: '',
     website: '',
+
     declarationCertified: false,
     dataProcessingConsent: false,
     marketingConsent: false,
+
+    originRegion: '', // ✅ ajouté
+    destinationRegion: '', // ✅ ajouté
+
+    originCountryCode: '', // ✅ ajouté
+    destinationCountryCode: '', // ✅ ajouté
+
+    air: false,
+    sea: false,
+    road: false,
+    express: false,
+    multimodal: false,
+    warehousing: false,
   });
+
+  const today = new Date().toISOString().split('T')[0];
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
-
     if (type === 'checkbox') {
       setFormData((prev) => ({
         ...prev,
         [name]: (e.target as HTMLInputElement).checked,
       }));
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-        ...(name === 'originCountry' ? { originCity: '' } : {}),
-        ...(name === 'destinationCountry' ? { destinationCity: '' } : {}),
-      }));
+      setFormData((prev) => {
+        let updates: Partial<FormData> = { [name]: value };
+
+        if (name === 'originCountry') {
+          const origin = referenceData.countries.find((c) => c.code === value);
+          updates = {
+            ...updates,
+            originCity: '',
+            originRegion: origin ? origin.region : '',
+            originCountryCode: origin ? origin.code : '', // ✅ rempli automatiquement
+          };
+        }
+
+        if (name === 'destinationCountry') {
+          const dest = referenceData.countries.find((c) => c.code === value);
+          updates = {
+            ...updates,
+            destinationCity: '',
+            destinationRegion: dest ? dest.region : '',
+            destinationCountryCode: dest ? dest.code : '', // ✅ rempli automatiquement
+          };
+        }
+
+        return { ...prev, ...updates };
+      });
     }
   };
 
@@ -116,103 +170,117 @@ const QuotationForm: React.FC = () => {
 
   const goBack = () => setStep((prev) => Math.max(prev - 1, 1));
 
-  // 🔹 1. Fonction utilitaire pour encoder en base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.readAsDataURL(file); // "data:application/pdf;base64,JVBERi0x..."
+      reader.readAsDataURL(file);
       reader.onload = () => {
-        // enlever le "data:xxx;base64," et garder uniquement le contenu
         const result = reader.result as string;
-        const base64 = result.split(',')[1];
-        resolve(base64);
+        resolve(result.split(',')[1]);
       };
       reader.onerror = (error) => reject(error);
     });
-  };
 
-  // 🔹 2. handleSubmit modifié
+  const [loading, setLoading] = useState(false);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
+    try {
+      const encodedFiles = await Promise.all(
+        formData.files.map(async (file) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          content: await fileToBase64(file),
+        }))
+      );
 
-    // Conversion fichiers -> base64
-    const encodedFiles = await Promise.all(
-      formData.files.map(async (file) => ({
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        content: await fileToBase64(file), // encodage base64
-      }))
-    );
+      const payload = {
+        ...formData,
+        originCountry: getCountryLabelForPayload(formData.originCountry, lang), // ✅ nom FR ou EN
+        destinationCountry: getCountryLabelForPayload(formData.destinationCountry, lang), // ✅ nom FR ou EN
+        companyCountry: getCountryLabelForPayload(formData.companyCountry, lang), // ✅ nom FR ou EN
+        files: encodedFiles,
+      };
 
-    // Construction du payload à envoyer
-    const payload = {
-      ...formData,
-      files: encodedFiles, // fichiers encodés en base64
-    };
+      const tokenResp = await fetch('/api/getToken', { method: 'POST' });
+      const tokenData = await tokenResp.json();
+      const accessToken = tokenData.access_token;
 
-    const resp = await fetch(
-      'https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/03c680748a1c47c4b5602e967697daca/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=615BvSpG0DnNXMWXZghkeUy9CHwfbycGu9_MkOtWi_A',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-flow-secret': process.env.NEXT_PUBLIC_FLOW_SECRET || '',
-        },
-        body: JSON.stringify(payload),
+      const flowResp = await fetch(
+        'https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/be18aba432f446028aa0ad01767d4018/triggers/manual/paths/invoke?api-version=2024-10-01',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (flowResp.ok) setStep(6);
+      else {
+        const errorText = await flowResp.text();
+        alert('Erreur Flow : ' + errorText);
       }
-    );
-
-    if (resp.ok) {
-      setStep(6);
-    } else {
-      const error = await resp.text();
-      alert('Erreur : ' + error);
+    } catch (err) {
+      console.error(err);
+      alert('Erreur lors de la soumission');
+    } finally {
+      setLoading(false);
     }
   }
 
-  /*const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    console.log('Données soumises :', formData);
-    alert('Formulaire complet soumis !');
-    setStep(6);
-  };*/
+  const getCountryName = (code: string) => {
+    const country = referenceData.countries.find((c) => c.code === code);
+    return country ? country[lang] : code;
+  };
 
-  /*async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const getCountryLabelForPayload = (code: string, lang: 'en' | 'fr') => {
+    const country = referenceData.countries.find((c) => c.code === code);
+    return country ? country[lang] : code;
+  };
 
-    const resp = await fetch(
-      "https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/03c680748a1c47c4b5602e967697daca/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=615BvSpG0DnNXMWXZghkeUy9CHwfbycGu9_MkOtWi_A",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-flow-secret": process.env.NEXT_PUBLIC_FLOW_SECRET || "", // clé secrète côté front
-        },
-        body: JSON.stringify(formData),
-      }
-    );
-
-    if (resp.ok) {
-      setStep(6);
-    } else {
-      const error = await resp.text();
-      alert("Erreur : " + error);
+  {
+    /* utilitaire pour afficher Oui/Non ou Yes/No */
+  }
+  const getYesNo = (value: boolean, lang: 'en' | 'fr') => {
+    if (lang === 'fr') {
+      return value ? 'Oui' : 'Non';
     }
-  }*/
-
-  /*
-  const filteredOriginCities = referenceData.cities.filter(
-    (c) => c.countryCode === formData.originCountry
-  );
-  const filteredDestinationCities = referenceData.cities.filter(
-    (c) => c.countryCode === formData.destinationCountry
-  ); */
+    return value ? 'Yes' : 'No';
+  };
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>COTATION</h1>
+      {/* 🔹 Choix de la langue */}
+      <div className={styles.languageSwitcher}>
+        <button
+          onClick={() => {
+            setLang('en');
+            setFormData((prev) => ({ ...prev, lang: 'en' })); // ✅ update aussi le formData
+          }}
+          disabled={lang === 'en'}
+          className={`${styles.langButton} ${lang === 'en' ? styles.active : ''}`}
+        >
+          EN
+        </button>
 
+        <button
+          onClick={() => {
+            setLang('fr');
+            setFormData((prev) => ({ ...prev, lang: 'fr' })); // ✅ update aussi le formData
+          }}
+          disabled={lang === 'fr'}
+          className={`${styles.langButton} ${lang === 'fr' ? styles.active : ''}`}
+        >
+          FR
+        </button>
+      </div>
+
+      {step !== 6 && <h1 className={styles.title}>{labels.quotation}</h1>}
       {step !== 6 && (
         <div className={styles.steps}>
           {[1, 2, 3, 4, 5].map((n) => (
@@ -225,11 +293,11 @@ const QuotationForm: React.FC = () => {
               <span>
                 {
                   [
-                    'Données d’acheminement',
-                    'Informations sur la cargaison',
-                    'Informations de contact',
-                    'Informations sur la société',
-                    'Synthèse',
+                    referenceData.labels[lang].routingInfo,
+                    referenceData.labels[lang].cargoInfo,
+                    referenceData.labels[lang].contactInfo,
+                    referenceData.labels[lang].companyInfo,
+                    referenceData.labels[lang].synthesis,
                   ][n - 1]
                 }
               </span>
@@ -246,11 +314,12 @@ const QuotationForm: React.FC = () => {
             setStep(2);
           }}
         >
-          <h2>CHAMP D&rsquo;APPLICATION </h2>
+          <h2 className={styles.subtitle}>Mode & Scope</h2>
 
-          <label className={styles.label}>Mode de transport *</label>
-          <div className={styles.radioGroup}>
-            {referenceData.transportModes.map((mode) => (
+          {/* Transport Mode */}
+          <label className={styles.label}>{labels.transportMode} *</label>
+          {/*<div className={styles.radioGroup}>
+            {referenceData.transportModes[lang].map((mode) => (
               <label key={mode}>
                 <input
                   type="radio"
@@ -258,13 +327,57 @@ const QuotationForm: React.FC = () => {
                   value={mode}
                   checked={formData.transportMode === mode}
                   onChange={handleChange}
+                  required
                 />
                 {mode}
               </label>
             ))}
+          </div>*/}
+          {/* Options Service Type */}
+          <div className={styles.radioGroup}>
+            <label className={styles.label}>
+              <input type="checkbox" name="air" checked={formData.air} onChange={handleChange} />{' '}
+              {labels.air}
+            </label>
+            <label className={styles.label}>
+              <input type="checkbox" name="sea" checked={formData.sea} onChange={handleChange} />{' '}
+              {labels.sea}
+            </label>
+            <label className={styles.label}>
+              <input type="checkbox" name="road" checked={formData.road} onChange={handleChange} />{' '}
+              {labels.road}
+            </label>
+            <label className={styles.label}>
+              <input
+                type="checkbox"
+                name="express"
+                checked={formData.express}
+                onChange={handleChange}
+              />{' '}
+              {labels.express}
+            </label>
+            <label className={styles.label}>
+              <input
+                type="checkbox"
+                name="multimodal"
+                checked={formData.multimodal}
+                onChange={handleChange}
+              />{' '}
+              {labels.multimodal}
+            </label>
+            <label className={styles.label}>
+              <input
+                type="checkbox"
+                name="warehousing"
+                checked={formData.warehousing}
+                onChange={handleChange}
+              />{' '}
+              {labels.warehousing}
+            </label>
           </div>
 
-          <label className={styles.label}>Incoterms *</label>
+          {/* Incoterm */}
+          <label className={styles.label}>{labels.incoterm} *</label>
           <select
             name="incoterm"
             value={formData.incoterm}
@@ -272,15 +385,16 @@ const QuotationForm: React.FC = () => {
             required
             className={styles.select}
           >
-            <option value="">-- Sélectionner --</option>
-            {referenceData.incoterms.map((i) => (
+            <option value="">-- {labels.select} --</option>
+            {referenceData.incoterms[lang].map((i) => (
               <option key={i} value={i}>
                 {i}
               </option>
             ))}
           </select>
 
-          <label className={styles.label}>Périmètre *</label>
+          {/* Scope */}
+          <label className={styles.label}>{labels.scope} *</label>
           <select
             name="scope"
             value={formData.scope}
@@ -288,31 +402,34 @@ const QuotationForm: React.FC = () => {
             required
             className={styles.select}
           >
-            <option value="">-- Sélectionner --</option>
-            {referenceData.scopes.map((s) => (
+            <option value="">-- {labels.select} --</option>
+            {referenceData.scopes[lang].map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
             ))}
           </select>
 
-          <h2>ORIGINE</h2>
-          <label className={styles.label}>Pays *</label>
+          {/* Origin */}
+          <h3 className={styles.subtitle}>{labels.origin}</h3>
+
+          <label className={styles.label}>{labels.country} *</label>
           <select
             name="originCountry"
             value={formData.originCountry}
             onChange={handleChange}
+            required
             className={styles.select}
           >
-            <option value="">-- Sélectionner --</option>
+            <option value="">-- {labels.select} --</option>
             {referenceData.countries.map((c) => (
               <option key={c.code} value={c.code}>
-                {c.name}
+                {c[lang]}
               </option>
             ))}
           </select>
 
-          <label className={styles.label}>Ville *</label>
+          <label className={styles.label}>{labels.city} *</label>
           <input
             type="text"
             name="originCity"
@@ -322,7 +439,7 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Date de prise en charge *</label>
+          <label className={styles.label}>{labels.startDate} *</label>
           <input
             type="date"
             name="originDate"
@@ -330,25 +447,29 @@ const QuotationForm: React.FC = () => {
             onChange={handleChange}
             required
             className={styles.input}
+            min={today}
           />
 
-          <h2>DESTINATION</h2>
-          <label className={styles.label}>Pays *</label>
+          {/* Destination */}
+          <h3 className={styles.subtitle}>{labels.destination}</h3>
+
+          <label className={styles.label}>{labels.country} *</label>
           <select
             name="destinationCountry"
             value={formData.destinationCountry}
             onChange={handleChange}
+            required
             className={styles.select}
           >
-            <option value="">-- Sélectionner --</option>
+            <option value="">-- {labels.select} --</option>
             {referenceData.countries.map((c) => (
               <option key={c.code} value={c.code}>
-                {c.name}
+                {c[lang]}
               </option>
             ))}
           </select>
 
-          <label className={styles.label}>Ville *</label>
+          <label className={styles.label}>{labels.city} *</label>
           <input
             type="text"
             name="destinationCity"
@@ -358,7 +479,7 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Date de livraison *</label>
+          <label className={styles.label}>{labels.endDate} *</label>
           <input
             type="date"
             name="destinationDate"
@@ -366,13 +487,20 @@ const QuotationForm: React.FC = () => {
             onChange={handleChange}
             required
             className={styles.input}
+            min={today}
           />
 
-          <br />
-          <br />
-          <button type="submit" className={`${styles.button} ${styles.next}`}>
-            Suivant →
-          </button>
+          <div className={styles.buttons}>
+            <button
+              className={`${styles.button} ${styles.prev}`}
+              onClick={() => (window.location.href = '/')}
+            >
+              ← {labels.backToHome}
+            </button>
+            <button type="submit" className={`${styles.button} ${styles.next}`}>
+              {labels.next}
+            </button>
+          </div>
         </form>
       )}
 
@@ -384,25 +512,27 @@ const QuotationForm: React.FC = () => {
             setStep(3);
           }}
         >
-          <h2>INFORMATIONS SUR LA CARGAISON</h2>
+          <h2 className={styles.subtitle}>{labels.cargoInfo}</h2>
 
-          <label className={styles.label}>Type de cargaison *</label>
+          {/* Cargo Type */}
+          <label className={styles.label}>{labels.cargoType} *</label>
           <select
-            name="QuotationType"
-            value={formData.QuotationType}
+            name="quotationType"
+            value={formData.quotationType}
             onChange={handleChange}
             required
             className={styles.select}
           >
-            <option value="">-- Sélectionner --</option>
-            {referenceData.quotationTypes.map((q) => (
+            <option value="">-- {labels.select} --</option>
+            {referenceData.quotationTypes[lang].map((q) => (
               <option key={q} value={q}>
                 {q}
               </option>
             ))}
           </select>
 
-          <label className={styles.label}>Volume total (CBM) *</label>
+          {/* Volume */}
+          <label className={styles.label}>{labels.volume} *</label>
           <input
             type="number"
             name="volume"
@@ -410,9 +540,11 @@ const QuotationForm: React.FC = () => {
             onChange={handleChange}
             required
             className={styles.input}
+            min="0"
           />
 
-          <label className={styles.label}>Poids total (KG) *</label>
+          {/* Weight */}
+          <label className={styles.label}>{labels.weight} *</label>
           <input
             type="number"
             name="weight"
@@ -420,8 +552,10 @@ const QuotationForm: React.FC = () => {
             onChange={handleChange}
             required
             className={styles.input}
+            min="0"
           />
 
+          {/* Options Cargo */}
           <div className={styles.radioGroup}>
             <label className={styles.label}>
               <input
@@ -430,7 +564,7 @@ const QuotationForm: React.FC = () => {
                 checked={formData.temperatureControlled}
                 onChange={handleChange}
               />{' '}
-              Température contrôlée
+              {labels.temperatureControlled}
             </label>
             <label className={styles.label}>
               <input
@@ -439,7 +573,7 @@ const QuotationForm: React.FC = () => {
                 checked={formData.dangerousGoods}
                 onChange={handleChange}
               />{' '}
-              Marchandise dangereuse
+              {labels.dangerousGoods}
             </label>
             <label className={styles.label}>
               <input
@@ -448,7 +582,7 @@ const QuotationForm: React.FC = () => {
                 checked={formData.customsFormalities}
                 onChange={handleChange}
               />{' '}
-              Formalités douanières
+              {labels.customsFormalities}
             </label>
             <label className={styles.label}>
               <input
@@ -457,15 +591,37 @@ const QuotationForm: React.FC = () => {
                 checked={formData.insurance}
                 onChange={handleChange}
               />{' '}
-              Assurance
+              {labels.insurance}
             </label>
           </div>
 
-          <p>
-            <strong>Souhaitez-vous ajouter un commentaire à votre demande ?</strong>
-          </p>
+          <label className={styles.label}>{labels.question}</label>
 
-          <label className={styles.label}>Ecrivez ci-dessous</label>
+          {/* Comment */}
+          <label
+            className={styles.label}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            {labels.comment}
+            <span
+              title={labels.maxcomment}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                backgroundColor: '#2b3e64',
+                color: 'white',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'help',
+              }}
+            >
+              !
+            </span>
+          </label>
           <textarea
             name="comment"
             rows={3}
@@ -474,14 +630,11 @@ const QuotationForm: React.FC = () => {
             className={styles.textarea}
           />
 
-          <p>
-            <strong>Souhaitez-vous joindre des fichiers à votre demande ?</strong>
-          </p>
-
-          <label className={styles.label}>Documents</label>
+          {/* File Upload */}
+          <label className={styles.label}>{labels.files}</label>
           <div className={styles.uploadBox}>
             <input type="file" multiple onChange={handleFileChange} />
-            <p>Faites glisser les fichiers ici ou cliquez pour les télécharger</p>
+            <p>{labels.maxfilesize}</p>
           </div>
 
           {/* Affichage des fichiers ajoutés */}
@@ -525,10 +678,10 @@ const QuotationForm: React.FC = () => {
 
           <div className={styles.buttons}>
             <button type="button" onClick={goBack} className={`${styles.button} ${styles.prev}`}>
-              ← Précédent
+              {labels.previous}
             </button>
             <button type="submit" className={`${styles.button} ${styles.next}`}>
-              Suivant →
+              {labels.next}
             </button>
           </div>
         </form>
@@ -542,9 +695,10 @@ const QuotationForm: React.FC = () => {
             setStep(4);
           }}
         >
-          <h2>INFORMATIONS DE CONTACT</h2>
+          <h2 className={styles.subtitle}>{labels.contactInfo}</h2>
 
-          <label className={styles.label}>Prénom *</label>
+          {/* First Name */}
+          <label className={styles.label}>{labels.firstName} *</label>
           <input
             type="text"
             name="firstName"
@@ -554,7 +708,8 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Nom *</label>
+          {/* Last Name */}
+          <label className={styles.label}>{labels.lastName} *</label>
           <input
             type="text"
             name="lastName"
@@ -564,16 +719,17 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Numéro de téléphone *</label>
+          {/* Phone */}
+          <label className={styles.label}>{labels.phone} *</label>
           <div className={styles.flexRow}>
             <input
-              style={{ width: 80 }}
               type="text"
               name="phoneCode"
               value={formData.phoneCode}
               onChange={handleChange}
               required
               className={styles.input}
+              style={{ width: 80 }}
             />
             <input
               type="text"
@@ -585,7 +741,8 @@ const QuotationForm: React.FC = () => {
             />
           </div>
 
-          <label className={styles.label}>Email *</label>
+          {/* Email */}
+          <label className={styles.label}>{labels.email} *</label>
           <input
             type="email"
             name="email"
@@ -595,7 +752,8 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Intitulé du poste *</label>
+          {/* Job Title */}
+          <label className={styles.label}>{labels.jobTitle} *</label>
           <input
             type="text"
             name="jobTitle"
@@ -607,10 +765,10 @@ const QuotationForm: React.FC = () => {
 
           <div className={styles.buttons}>
             <button type="button" onClick={goBack} className={`${styles.button} ${styles.prev}`}>
-              ← Précédent
+              {labels.previous}
             </button>
             <button type="submit" className={`${styles.button} ${styles.next}`}>
-              Suivant →
+              {labels.next}
             </button>
           </div>
         </form>
@@ -624,9 +782,10 @@ const QuotationForm: React.FC = () => {
             setStep(5);
           }}
         >
-          <h2>INFORMATIONS SUR LA SOCIÉTÉ</h2>
+          <h2 className={styles.subtitle}>{labels.companyInfo}</h2>
 
-          <label className={styles.label}>Nom de la société *</label>
+          {/* Company Name */}
+          <label className={styles.label}>{labels.companyName} *</label>
           <input
             type="text"
             name="companyName"
@@ -636,7 +795,8 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Adresse *</label>
+          {/* Street / Address */}
+          <label className={styles.label}>{labels.address} *</label>
           <input
             type="text"
             name="companyAddress"
@@ -646,7 +806,8 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Code Postal *</label>
+          {/* Zip Code */}
+          <label className={styles.label}>{labels.zip} *</label>
           <input
             type="text"
             name="postalCode"
@@ -656,7 +817,8 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Ville *</label>
+          {/* City */}
+          <label className={styles.label}>{labels.city} *</label>
           <input
             type="text"
             name="companyCity"
@@ -666,17 +828,25 @@ const QuotationForm: React.FC = () => {
             className={styles.input}
           />
 
-          <label className={styles.label}>Pays *</label>
-          <input
-            type="text"
+          {/* Country */}
+          <label className={styles.label}>{labels.country} *</label>
+          <select
             name="companyCountry"
             value={formData.companyCountry}
             onChange={handleChange}
             required
-            className={styles.input}
-          />
+            className={styles.select}
+          >
+            <option value="">-- {labels.select} --</option>
+            {referenceData.countries.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c[lang]}
+              </option>
+            ))}
+          </select>
 
-          <label className={styles.label}>Site web</label>
+          {/* Website */}
+          <label className={styles.label}>{labels.website}</label>
           <input
             type="text"
             name="website"
@@ -687,10 +857,10 @@ const QuotationForm: React.FC = () => {
 
           <div className={styles.buttons}>
             <button type="button" onClick={goBack} className={`${styles.button} ${styles.prev}`}>
-              ← Précédent
+              {labels.previous}
             </button>
             <button type="submit" className={`${styles.button} ${styles.next}`}>
-              Suivant →
+              {labels.next}
             </button>
           </div>
         </form>
@@ -699,93 +869,120 @@ const QuotationForm: React.FC = () => {
       {/* === ÉTAPE 5 : SYNTHÈSE === */}
       {step === 5 && (
         <form onSubmit={handleSubmit}>
-          <h3>DONNÉES D&rsquo;ACHEMINEMENT</h3>
+          {/* ROUTING / ACHÈMINEMENT */}
+          <h3 className={styles.subtitle}>{labels.routingInfo}</h3>
           <p>
-            <strong>Mode de transport :</strong> {formData.transportMode}
+            <strong>{labels.transportMode}:</strong>
           </p>
           <p>
-            <strong>Incoterm :</strong> {formData.incoterm}
+            <strong>{labels.air}:</strong> {getYesNo(formData.air, lang)}
           </p>
           <p>
-            <strong>Scope :</strong> {formData.scope}
+            <strong>{labels.sea}:</strong> {getYesNo(formData.sea, lang)}
           </p>
           <p>
-            <strong>Origine :</strong> {formData.originCity}, {formData.originCountry} –{' '}
-            {formData.originDate}
+            <strong>{labels.road}:</strong> {getYesNo(formData.road, lang)}
           </p>
           <p>
-            <strong>Destination :</strong> {formData.destinationCity}, {formData.destinationCountry}{' '}
-            – {formData.destinationDate}
+            <strong>{labels.express}:</strong> {getYesNo(formData.express, lang)}
+          </p>
+          <p>
+            <strong>{labels.multimodal}:</strong> {getYesNo(formData.multimodal, lang)}
+          </p>
+          <p>
+            <strong>{labels.warehousing}:</strong> {getYesNo(formData.warehousing, lang)}
+          </p>
+          <p>
+            <strong>{labels.incoterm}:</strong> {formData.incoterm}
+          </p>
+          <p>
+            <strong>{labels.scope}:</strong> {formData.scope}
+          </p>
+          <p>
+            <strong>{labels.origin}:</strong> {formData.originCity},{' '}
+            {getCountryName(formData.originCountry)} – {formData.originDate}
+          </p>
+          <p>
+            <strong>{labels.destination}:</strong> {formData.destinationCity},{' '}
+            {getCountryName(formData.destinationCountry)} – {formData.destinationDate}
           </p>
 
-          <h3>INFORMATIONS SUR LA CARGAISON</h3>
+          {/* CARGO / CARGAISON */}
+          <h3 className={styles.subtitle}>{labels.cargoInfo}</h3>
           <p>
-            <strong>Type :</strong> {formData.QuotationType}
+            <strong>{labels.cargoType}:</strong> {formData.quotationType}
           </p>
           <p>
-            <strong>Volume :</strong> {formData.volume} CBM
+            <strong>{labels.volume}:</strong> {formData.volume} CBM
           </p>
           <p>
-            <strong>Poids :</strong> {formData.weight} KG
+            <strong>{labels.weight}:</strong> {formData.weight} KG
           </p>
           <p>
-            <strong>Température contrôlée :</strong>{' '}
-            {formData.temperatureControlled ? 'Oui' : 'Non'}
+            <strong>{labels.temperatureControlled}:</strong>{' '}
+            {getYesNo(formData.temperatureControlled, lang)}
           </p>
           <p>
-            <strong>Marchandises dangereuses :</strong> {formData.dangerousGoods ? 'Oui' : 'Non'}
+            <strong>{labels.dangerousGoods}:</strong> {getYesNo(formData.dangerousGoods, lang)}
           </p>
           <p>
-            <strong>Douanes :</strong> {formData.customsFormalities ? 'Oui' : 'Non'}
+            <strong>{labels.customsFormalities}:</strong>{' '}
+            {getYesNo(formData.customsFormalities, lang)}
           </p>
           <p>
-            <strong>Assurance :</strong> {formData.insurance ? 'Oui' : 'Non'}
+            <strong>{labels.insurance}:</strong> {getYesNo(formData.insurance, lang)}
           </p>
           {formData.comment && (
             <p>
-              <strong>Commentaire :</strong> {formData.comment}
+              <strong>{labels.comment}:</strong> {formData.comment}
             </p>
           )}
 
-          <h3>INFORMATIONS DE CONTACT</h3>
+          {/* CONTACT INFORMATION */}
+          <h3 className={styles.subtitle}>{labels.contactInfo}</h3>
           <p>
-            <strong>Nom :</strong> {formData.firstName} {formData.lastName}
+            <strong>
+              {labels.lastName} & {labels.firstName}:
+            </strong>{' '}
+            {formData.firstName} {formData.lastName}
           </p>
           <p>
-            <strong>Email :</strong> {formData.email}
+            <strong>{labels.email}:</strong> {formData.email}
           </p>
           <p>
-            <strong>Téléphone :</strong> {formData.phoneCode} {formData.phoneNumber}
+            <strong>{labels.phone}:</strong> {formData.phoneCode} {formData.phoneNumber}
           </p>
           <p>
-            <strong>Poste :</strong> {formData.jobTitle}
-          </p>
-
-          <h3>INFORMATIONS SUR LA SOCIÉTÉ</h3>
-          <p>
-            <strong>Nom :</strong> {formData.companyName}
-          </p>
-          <p>
-            <strong>Adresse :</strong> {formData.companyAddress}
-          </p>
-          <p>
-            <strong>Code postal :</strong> {formData.postalCode}
-          </p>
-          <p>
-            <strong>Ville :</strong> {formData.companyCity}
-          </p>
-          <p>
-            <strong>Pays :</strong> {formData.companyCountry}
-          </p>
-          <p>
-            <strong>Site web :</strong> {formData.website}
+            <strong>{labels.jobTitle}:</strong> {formData.jobTitle}
           </p>
 
+          {/* COMPANY INFORMATION */}
+          <h3 className={styles.subtitle}>{labels.companyInfo}</h3>
+          <p>
+            <strong>{labels.companyName}:</strong> {formData.companyName}
+          </p>
+          <p>
+            <strong>{labels.address}:</strong> {formData.companyAddress}
+          </p>
+          <p>
+            <strong>{labels.zip}:</strong> {formData.postalCode}
+          </p>
+          <p>
+            <strong>{labels.city}:</strong> {formData.companyCity}
+          </p>
+          <p>
+            <strong>{labels.country}:</strong> {getCountryName(formData.companyCountry)}
+          </p>
+          <p>
+            <strong>{labels.website}:</strong> {formData.website || '-'}
+          </p>
+
+          {/* FILES / DOCUMENTS */}
+          <h3 className={styles.subtitle}>{labels.files}</h3>
           {formData.files.length === 0 && <p>Aucun fichier joint.</p>}
           {formData.files.length > 0 && (
             <ul>
               {formData.files.map((file, idx) => {
-                // Fonction supprimer
                 const handleDeleteFile = () => {
                   setFormData((prev) => ({
                     ...prev,
@@ -793,7 +990,6 @@ const QuotationForm: React.FC = () => {
                   }));
                 };
 
-                // Fonction télécharger
                 const handleDownloadFile = () => {
                   const url = URL.createObjectURL(file);
                   const link = document.createElement('a');
@@ -809,79 +1005,80 @@ const QuotationForm: React.FC = () => {
                   <li
                     key={idx}
                     style={{
-                      marginBottom: '10px',
                       display: 'flex',
                       alignItems: 'center',
+                      marginBottom: '8px',
                     }}
                   >
                     <span style={{ flex: 1 }}>
                       {file.name} ({(file.size / 1024).toFixed(1)} KB)
                     </span>
 
-                    {/* Icône Supprimer */}
-                    <svg
+                    {/* Icône Corbeille */}
+                    <button
+                      type="button"
                       onClick={handleDeleteFile}
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
                       style={{
+                        background: 'transparent',
+                        border: 'none',
                         cursor: 'pointer',
-                        width: '20px',
-                        height: '20px',
-                        marginRight: '15px',
-                        color: 'red',
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') handleDeleteFile();
+                        marginRight: '10px',
                       }}
                     >
-                      <title>Supprimer</title>
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                      <path d="M10 11v6" />
-                      <path d="M14 11v6" />
-                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                    </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ width: '20px', height: '20px', color: 'red' }}
+                      >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                      </svg>
+                    </button>
 
                     {/* Icône Télécharger */}
-                    <svg
+                    <button
+                      type="button"
                       onClick={handleDownloadFile}
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
                       style={{
+                        background: 'transparent',
+                        border: 'none',
                         cursor: 'pointer',
-                        width: '20px',
-                        height: '20px',
-                        color: 'green',
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') handleDownloadFile();
                       }}
                     >
-                      <title>Télécharger</title>
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          color: 'green',
+                        }}
+                      >
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                    </button>
                   </li>
                 );
               })}
             </ul>
           )}
 
+          {/* CONSENT / DECLARATION */}
           <div className={styles.radioGroup}>
             <label>
               <input
@@ -891,19 +1088,7 @@ const QuotationForm: React.FC = () => {
                 onChange={handleChange}
                 required
               />{' '}
-              Je certifie sur l’honneur que les informations et pièces jointes fournies dans cette
-              déclaration sont exactes et complètes.
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                name="dataProcessingConsent"
-                checked={formData.dataProcessingConsent}
-                onChange={handleChange}
-              />{' '}
-              Africa Global Logistics traite vos données uniquement afin de répondre à votre
-              demande. Pour en savoir plus sur la manière dont nous traitons vos données
-              personnelles et sur vos droits, cliquez ici.
+              {labels.declaration}
             </label>
             <label>
               <input
@@ -912,18 +1097,45 @@ const QuotationForm: React.FC = () => {
                 checked={formData.marketingConsent}
                 onChange={handleChange}
               />{' '}
-              Je consens par la présente à ce qu’Africa Global Logistics traite mes données
-              personnelles afin de m’envoyer des offres commerciales et des informations sur nos
-              services par email.
+              {labels.marketingConsent}
+            </label>
+            <label>
+              {(() => {
+                // Séparer le texte avant et après "cliquez ici / click here"
+                const textParts = labels.dataProcessingConsent.split(
+                  lang === 'fr' ? 'cliquez ici' : 'click here'
+                );
+                return (
+                  <>
+                    {textParts[0]}
+                    <a
+                      href={
+                        lang === 'fr'
+                          ? 'https://www.aglgroup.com/politique-de-confidentialite/'
+                          : 'https://www.aglgroup.com/en/privacy-policy/'
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {lang === 'fr' ? 'cliquez ici' : 'click here'}
+                    </a>
+                    {textParts[1]}
+                  </>
+                );
+              })()}
             </label>
           </div>
 
           <div className={styles.buttons}>
             <button type="button" onClick={goBack} className={`${styles.button} ${styles.prev}`}>
-              ← Précédent
+              {labels.previous}
             </button>
-            <button type="submit" className={`${styles.button} ${styles.submit}`}>
-              Soumettre →
+            <button
+              type="submit"
+              className={`${styles.button} ${styles.submit}`}
+              disabled={loading}
+            >
+              {loading ? <div className={styles.spinner}></div> : 'Submit →'}
             </button>
           </div>
         </form>
@@ -931,29 +1143,28 @@ const QuotationForm: React.FC = () => {
 
       {step === 6 && (
         <div className={styles.thankYouContainer}>
-          <p style={{ color: 'red' }}>
-            <strong>Merci pour votre demande !</strong>
-          </p>
-          <p style={{ color: 'red' }}>
-            Nous sommes ravis que vous ayez pris le temps de remplir notre formulaire de cotation.
-            Notre équipe examine votre demande avec attention et reviendra vers vous très rapidement
-            avec une proposition adaptée à vos besoins.
-          </p>
-          <p style={{ color: 'red' }}>En attendant, n’hésitez pas à parcourir notre site.</p>
+          <h2 className={styles.subtitle}>
+            <strong>{labels.thankYouTitle}</strong>
+          </h2>
+          <p>{labels.thankYouMessage}</p>
 
           <div className={styles.buttonsContainer}>
+            {/* Retour à l'accueil */}
             <button
               className={`${styles.button} ${styles.prev}`}
               onClick={() => (window.location.href = '/')}
             >
-              ← Retour à l&rsquo;accueil
+              ← {labels.backToHome}
             </button>
+
+            {/* Envoyer une nouvelle demande */}
             <button
               className={`${styles.button} ${styles.next}`}
               onClick={() => {
                 // 🔄 Réinitialisation complète du formulaire
                 setFormData({
-                  transportMode: referenceData.transportModes[0],
+                  lang: 'en',
+                  transportMode: '',
                   incoterm: '',
                   scope: '',
                   originCountry: '',
@@ -963,7 +1174,7 @@ const QuotationForm: React.FC = () => {
                   destinationCity: '',
                   destinationDate: '',
 
-                  QuotationType: referenceData.quotationTypes[0],
+                  quotationType: '',
                   volume: '',
                   weight: '',
                   temperatureControlled: false,
@@ -990,11 +1201,24 @@ const QuotationForm: React.FC = () => {
                   declarationCertified: false,
                   dataProcessingConsent: false,
                   marketingConsent: false,
+
+                  originRegion: '',
+                  destinationRegion: '',
+
+                  originCountryCode: '',
+                  destinationCountryCode: '',
+
+                  air: false,
+                  sea: false,
+                  road: false,
+                  express: false,
+                  multimodal: false,
+                  warehousing: false,
                 });
                 setStep(1);
               }}
             >
-              Faire une autre demande
+              {labels.sendAnotherRequest}
             </button>
           </div>
         </div>
