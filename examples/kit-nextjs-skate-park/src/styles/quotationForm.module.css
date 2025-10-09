@@ -26,8 +26,10 @@
 
 .steps {
   display: flex;
+  width: 630px;
   justify-content: center;
   margin: 30px 0;
+  margin-left: 50px;
   counter-reset: step;
 }
 

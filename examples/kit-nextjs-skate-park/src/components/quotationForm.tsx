@@ -43,6 +43,7 @@ type FormData = {
   companyCity: string;
   companyCountry: string;
   website: string;
+  vatRegistration: string;
 
   declarationCertified: boolean;
   dataProcessingConsent: boolean;
@@ -102,6 +103,7 @@ const QuotationForm: React.FC = () => {
     companyCity: '',
     companyCountry: '',
     website: '',
+    vatRegistration: '',
 
     declarationCertified: false,
     dataProcessingConsent: false,
@@ -122,6 +124,8 @@ const QuotationForm: React.FC = () => {
   });
 
   const today = new Date().toISOString().split('T')[0];
+  // 🔹 Ajoute cet état local pour gérer les erreurs email
+  const [emailError, setEmailError] = useState('');
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -154,6 +158,12 @@ const QuotationForm: React.FC = () => {
             destinationRegion: dest ? dest.region : '',
             destinationCountryCode: dest ? dest.code : '', // ✅ rempli automatiquement
           };
+        }
+
+        // 🔹 Modifie ton handleChange pour inclure une vérification
+        if (name === 'email') {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          setEmailError(emailRegex.test(value) ? '' : 'Adresse e-mail invalide');
         }
 
         return { ...prev, ...updates };
@@ -204,17 +214,19 @@ const QuotationForm: React.FC = () => {
         files: encodedFiles,
       };
 
-      const tokenResp = await fetch('/api/getToken', { method: 'POST' });
-      const tokenData = await tokenResp.json();
-      const accessToken = tokenData.access_token;
+      // get token - décommenter cette étape pour retourner sur la méthode api route
+      //const tokenResp = await fetch("/api/getToken", { method: "POST" });
+      //const tokenData = await tokenResp.json();
+      //const accessToken = tokenData.access_token;
 
       const flowResp = await fetch(
-        'https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/be18aba432f446028aa0ad01767d4018/triggers/manual/paths/invoke?api-version=2024-10-01',
+        'https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d08503b9f77f4f45a8195940da9bf41a/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=XB_GfZeIUjYQq0ckFXvlaMwl0s001eA02ViiI-OHWYA',
+        //"https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/be18aba432f446028aa0ad01767d4018/triggers/manual/paths/invoke?api-version=2024-10-01",
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
+            //Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify(payload),
         }
@@ -377,12 +389,11 @@ const QuotationForm: React.FC = () => {
           </div>
 
           {/* Incoterm */}
-          <label className={styles.label}>{labels.incoterm} *</label>
+          <label className={styles.label}>{labels.incoterm} </label>
           <select
             name="incoterm"
             value={formData.incoterm}
             onChange={handleChange}
-            required
             className={styles.select}
           >
             <option value="">-- {labels.select} --</option>
@@ -750,7 +761,9 @@ const QuotationForm: React.FC = () => {
             onChange={handleChange}
             required
             className={styles.input}
+            style={emailError ? { borderColor: 'red' } : {}}
           />
+          {emailError && <p style={{ color: 'red', fontSize: '0.9em' }}>{emailError}</p>}
 
           {/* Job Title */}
           <label className={styles.label}>{labels.jobTitle} *</label>
@@ -852,6 +865,17 @@ const QuotationForm: React.FC = () => {
             name="website"
             value={formData.website}
             onChange={handleChange}
+            className={styles.input}
+          />
+
+          {/* VAT registration number */}
+          <label className={styles.label}>{labels.vatRegistration} *</label>
+          <input
+            type="text"
+            name="vatRegistration"
+            value={formData.vatRegistration}
+            onChange={handleChange}
+            required
             className={styles.input}
           />
 
@@ -975,6 +999,9 @@ const QuotationForm: React.FC = () => {
           </p>
           <p>
             <strong>{labels.website}:</strong> {formData.website || '-'}
+          </p>
+          <p>
+            <strong>{labels.vatRegistration}:</strong> {formData.vatRegistration}
           </p>
 
           {/* FILES / DOCUMENTS */}
@@ -1197,6 +1224,7 @@ const QuotationForm: React.FC = () => {
                   companyCity: '',
                   companyCountry: '',
                   website: '',
+                  vatRegistration: '',
 
                   declarationCertified: false,
                   dataProcessingConsent: false,
