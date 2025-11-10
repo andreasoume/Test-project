@@ -1,7 +1,8 @@
-//import React, { useState, ChangeEvent, FormEvent } from 'react';
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, ChangeEvent, useEffect } from 'react';
 import styles from '../styles/quotationForm.module.css';
 import referenceData from '../data/referenceData.json';
+
+import ReCAPTCHA from 'react-google-recaptcha';
 
 type Lang = 'en' | 'fr';
 
@@ -62,6 +63,10 @@ type FormData = {
   multimodal: boolean;
   warehousing: boolean;
 };
+
+/* ---------------------------
+   Composant principal
+   --------------------------- */
 
 const QuotationForm: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -127,6 +132,23 @@ const QuotationForm: React.FC = () => {
   // 🔹 Ajoute cet état local pour gérer les erreurs email
   const [emailError, setEmailError] = useState('');
 
+  const [message, setMessage] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState<boolean | null>(null);
+  const [flowResponse, setFlowResponse] = useState<any>(null);
+
+  // Ton useEffect pour auto-fermer le message
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(''), 5000); // 5 secondes
+      return () => clearTimeout(timer); // Nettoyage si message change avant la fin
+    }
+  }, [message]);
+
+  /* ------------------------------------------
+     handleChange : gestionnaire centralisé pour
+     input/select/textarea (ChangeEvent)
+     ------------------------------------------ */
+
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
@@ -171,6 +193,12 @@ const QuotationForm: React.FC = () => {
     }
   };
 
+  /* -----------------------
+     handleFileChange
+     - récupère les fichiers choisis par l'utilisateur
+     - les ajoute au tableau formData.files
+     ----------------------- */
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
@@ -179,6 +207,11 @@ const QuotationForm: React.FC = () => {
   };
 
   const goBack = () => setStep((prev) => Math.max(prev - 1, 1));
+
+  /* -----------------------
+     fileToBase64 : convertit File -> base64 string
+     - retourne uniquement la partie base64 (sans le "data:*/ /*;base64,")
+     ----------------------- */
 
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -193,9 +226,27 @@ const QuotationForm: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
 
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
+  /* -----------------------
+     handleSubmit : envoi final
+     - encode les fichiers en base64
+     - construit le payload et l'envoie via fetch
+     ----------------------- */
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setMessage(null); // 🔹 Efface l’ancien message
+    setIsSuccess(null);
+
+    if (!captchaToken) {
+      setMessage(lang === 'fr' ? 'Veuillez valider le reCAPTCHA.' : 'Please verify the reCAPTCHA.');
+      setIsSuccess(false);
+      setLoading(false);
+      return;
+    }
+
     try {
       const encodedFiles = await Promise.all(
         formData.files.map(async (file) => ({
@@ -208,38 +259,42 @@ const QuotationForm: React.FC = () => {
 
       const payload = {
         ...formData,
-        originCountry: getCountryLabelForPayload(formData.originCountry, lang), // ✅ nom FR ou EN
-        destinationCountry: getCountryLabelForPayload(formData.destinationCountry, lang), // ✅ nom FR ou EN
-        companyCountry: getCountryLabelForPayload(formData.companyCountry, lang), // ✅ nom FR ou EN
+        originCountry: getCountryLabelForPayload(formData.originCountry, lang),
+        destinationCountry: getCountryLabelForPayload(formData.destinationCountry, lang),
+        companyCountry: getCountryLabelForPayload(formData.companyCountry, lang),
         files: encodedFiles,
+        captchaToken,
       };
-
-      // get token - décommenter cette étape pour retourner sur la méthode api route
-      //const tokenResp = await fetch("/api/getToken", { method: "POST" });
-      //const tokenData = await tokenResp.json();
-      //const accessToken = tokenData.access_token;
 
       const flowResp = await fetch(
         'https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d08503b9f77f4f45a8195940da9bf41a/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=XB_GfZeIUjYQq0ckFXvlaMwl0s001eA02ViiI-OHWYA',
-        //"https://68b60aa88dc4e791bf486048b0d517.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/be18aba432f446028aa0ad01767d4018/triggers/manual/paths/invoke?api-version=2024-10-01",
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            //Authorization: `Bearer ${accessToken}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         }
       );
 
-      if (flowResp.ok) setStep(6);
-      else {
+      if (flowResp.ok) {
+        const data = await flowResp.json();
+        setFlowResponse(data);
+        setMessage(data.message || 'Formulaire envoyé avec succès !');
+        setIsSuccess(true);
+        setStep(6);
+      } else {
         const errorText = await flowResp.text();
-        alert('Erreur Flow : ' + errorText);
+        console.error('Erreur Flow:', errorText);
+        setMessage('Erreur lors de l’envoi au flux Power Automate : ' + errorText);
+        setIsSuccess(false);
       }
-    } catch (err) {
-      console.error(err);
-      alert('Erreur lors de la soumission');
+    } catch (error) {
+      console.error('Erreur lors de l’envoi du formulaire :', error);
+      setMessage(
+        lang === 'fr'
+          ? 'Une erreur est survenue lors de l’envoi du formulaire.'
+          : 'An error occurred while submitting the form.'
+      );
+      setIsSuccess(false);
     } finally {
       setLoading(false);
     }
@@ -264,6 +319,11 @@ const QuotationForm: React.FC = () => {
     }
     return value ? 'Yes' : 'No';
   };
+
+  /* -----------------------
+     Rendu JSX
+     - Le formulaire est divisé en étapes (step 1..6)
+     ----------------------- */
 
   return (
     <div className={styles.container}>
@@ -1153,6 +1213,11 @@ const QuotationForm: React.FC = () => {
             </label>
           </div>
 
+          <ReCAPTCHA
+            sitekey="6LdRgAUsAAAAALFUzcwOJEU0YhhVDYuwnNgMaGJQ"
+            onChange={(token: React.SetStateAction<string | null>) => setCaptchaToken(token)}
+          />
+
           <div className={styles.buttons}>
             <button type="button" onClick={goBack} className={`${styles.button} ${styles.prev}`}>
               {labels.previous}
@@ -1166,6 +1231,37 @@ const QuotationForm: React.FC = () => {
             </button>
           </div>
         </form>
+      )}
+
+      {message && (
+        <div
+          style={{
+            marginTop: '1rem',
+            padding: '10px 15px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            backgroundColor: isSuccess ? '#d4edda' : '#f8d7da',
+            color: isSuccess ? '#155724' : '#721c24',
+            border: `1px solid ${isSuccess ? '#c3e6cb' : '#f5c6cb'}`,
+            position: 'relative',
+          }}
+        >
+          {/* Croix pour fermer le message */}
+          <span
+            onClick={() => setMessage('')}
+            style={{
+              position: 'absolute',
+              top: '5px',
+              right: '10px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+          >
+            ×
+          </span>
+
+          {message}
+        </div>
       )}
 
       {step === 6 && (
