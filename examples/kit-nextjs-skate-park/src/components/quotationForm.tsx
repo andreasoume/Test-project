@@ -134,14 +134,16 @@ const QuotationForm: React.FC = () => {
 
   const [message, setMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState<boolean | null>(null);
-  const [flowResponse, setFlowResponse] = useState<any>(null);
+  const [, setFlowResponse] = useState<any>(null);
 
   // Ton useEffect pour auto-fermer le message
   useEffect(() => {
     if (message) {
-      const timer = setTimeout(() => setMessage(''), 5000); // 5 secondes
-      return () => clearTimeout(timer); // Nettoyage si message change avant la fin
+      const timer = setTimeout(() => setMessage(''), 5000);
+      return () => clearTimeout(timer); // nettoyage
     }
+  
+    return undefined; // ✅ assure qu’une valeur est toujours retournée
   }, [message]);
 
   /* ------------------------------------------
